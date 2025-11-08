@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IndústriaConecta - MVP (API)</title>
+    <!-- 1. Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Fonte Inter padrão do Tailwind */
+        body { font-family: 'Inter', sans-serif; }
+        /* Esconder páginas inativas */
+        .page { display: none; }
+        .page.active { display: block; }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+    <!-- Container Principal da App -->
+    <div id="app" class="max-w-7xl mx-auto min-h-screen">
+
+        <!-- Header / Navegação -->
+        <header class="bg-white shadow-md sticky top-0 z-10">
+            <nav class="container mx-auto px-4 py-4 flex justify-between items-center">
+                <div class="text-2xl font-bold text-blue-700">
+                    Indústria<span class="text-blue-500">Conecta</span>
+                </div>
+                <div>
+                    <button data-page="profile" class="nav-link text-gray-600 hover:text-blue-600 font-medium px-3 py-2 rounded-md">Perfil</button>
+                    <button data-page="projects" class="nav-link text-gray-600 hover:text-blue-600 font-medium px-3 py-2 rounded-md">Projetos</button>
+                    <button data-page="groups" class="nav-link text-gray-600 hover:text-blue-600 font-medium px-3 py-2 rounded-md">Grupos</button>
+                </div>
+            </nav>
+        </header>
+
+        <!-- Área de Conteúdo Dinâmico -->
+        <main class="p-4 md:p-8">
+
+            <!-- Tela de "Loading" simulada -->
+            <div id="loading-auth" class="text-center py-10">
+                <p class="text-lg font-medium">Carregando aplicação...</p>
+                <p class="mt-2 text-sm text-gray-600">Seu ID de usuário (simulado) aparecerá aqui:</p>
+                <code id="user-id" class="text-xs bg-gray-200 p-2 rounded block mt-2 break-all">Aguardando...</code>
+            </div>
+
+            <!-- PÁGINA 1: PERFIL (Cadastro Institucional) -->
+            <div id="page-profile" class="page">
+                <h1 class="text-3xl font-bold mb-6">Meu Perfil Institucional</h1>
+                <div class="bg-white p-6 rounded-lg shadow-md border border-gray-200">
+                    <form id="profile-form">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <!-- ... (campos do formulário - sem alteração) ... -->
+                            <div>
+                                <label for="profile-name" class="block text-sm font-medium text-gray-700">Nome da Indústria / Empresa</label>
+                                <input type="text" id="profile-name" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" placeholder="Ex: Metalúrgica Silva Ltda." required>
+                            </div>
+                            <div>
+                                <label for="profile-sector" class="block text-sm font-medium text-gray-700">Setor de Atuação</label>
+                                <input type="text" id="profile-sector" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" placeholder="Ex: Automotivo, Têxtil, Alimentos" required>
+                            </div>
+                        </div>
+                        <div class="mt-6">
+                            <label for="profile-offers" class="block text-sm font-medium text-gray-700">O que minha indústria oferece?</label>
+                            <textarea id="profile-offers" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" placeholder="Ex: Capacidade ociosa em tornos CNC, expertise em logística reversa..."></textarea>
+                        </div>
+                        <div class="mt-6">
+                            <label for="profile-needs" class="block text-sm font-medium text-gray-700">O que busco em parceiros?</label>
+                            <textarea id="profile-needs" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" placeholder="Ex: Fornecedor de matéria-prima X, parceria para inovação em embalagens..."></textarea>
+                        </div>
+                        <!-- Botão Salvar -->
+                        <div class="text-right mt-6">
+                            <button type="submit" class="bg-blue-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-blue-700 transition duration-200">
+                                Salvar Perfil
+                            </button>
+                            <span id="profile-status" class="ml-4 text-green-600"></span>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- PÁGINA 2: PROJETOS (Busca por Projetos) -->
+            <div id="page-projects" class="page">
+                <h1 class="text-3xl font-bold mb-6">Mural de Projetos e Oportunidades</h1>
+                
+                <!-- Formulário para Novo Projeto -->
+                <div class="bg-white p-6 rounded-lg shadow-md border border-gray-200 mb-8">
+                    <form id="new-project-form">
+                        <!-- ... (campos do formulário - sem alteração) ... -->
+                        <h2 class="text-xl font-semibold mb-4">Publicar Nova Oportunidade</h2>
+                        <div class="mb-4">
+                            <label for="project-title" class="block text-sm font-medium text-gray-700">Título do Projeto / Oportunidade</label>
+                            <input type="text" id="project-title" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" placeholder="Ex: Busco parceiro para desenvolver novo produto" required>
+                        </div>
+                        <div class="mb-4">
+                            <label for="project-desc" class="block text-sm font-medium text-gray-700">Descrição</label>
+                            <textarea id="project-desc" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" placeholder="Detalhe o que você precisa ou oferece..." required></textarea>
+                        </div>
+                        <div class="text-right">
+                            <button type="submit" class="bg-blue-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-blue-700 transition duration-200">
+                                Publicar Projeto
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Busca -->
+                <div class="mb-4">
+                    <input type="text" id="project-search" class="block w-full rounded-md border-gray-300 shadow-sm p-3" placeholder="Buscar projetos por palavra-chave...">
+                </div>
+
+                <!-- Lista de Projetos -->
+                <div id="projects-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <p id="projects-loading" class="text-gray-600">Carregando projetos...</p>
+                </div>
+            </div>
+
+            <!-- PÁGINA 3: GRUPOS (Grupos Temáticos) -->
+            <div id="page-groups" class="page">
+                <!-- ... (HTML dos grupos - sem alteração) ... -->
+                <h1 class="text-3xl font-bold mb-6">Grupos Temáticos</h1>
+                <div class="md:flex md:space-x-6">
+                    <div class="md:w-1/3 mb-6 md:mb-0">
+                        <h2 class="text-xl font-semibold mb-4">Tópicos</h2>
+                        <div class="bg-white p-4 rounded-lg shadow-md border border-gray-200">
+                            <ul id="group-list" class="space-y-2">
+                                <li><button class="group-select-btn w-full text-left p-3 rounded-md hover:bg-gray-100 font-medium" data-group="logistica">Logística e Cadeia de Suprimentos</button></li>
+                                <li><button class="group-select-btn w-full text-left p-3 rounded-md hover:bg-gray-100 font-medium" data-group="inovacao">Inovação e Tecnologia</button></li>
+                                <li><button class="group-select-btn w-full text-left p-3 rounded-md hover:bg-gray-100 font-medium" data-group="sustentabilidade">Sustentabilidade e ESG</button></li>
+                                <li><button class="group-select-btn w-full text-left p-3 rounded-md hover:bg-gray-100 font-medium" data-group="gestao">Gestão e Finanças</button></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="md:w-2/3">
+                        <h2 id="current-group-title" class="text-xl font-semibold mb-4">Selecione um grupo para começar</h2>
+                        <div class="bg-white h-[60vh] flex flex-col rounded-lg shadow-md border border-gray-200">
+                            <div id="group-messages" class="flex-1 p-4 space-y-4 overflow-y-auto">
+                                <p id="group-messages-placeholder" class="text-gray-500 text-center p-8">As mensagens deste grupo aparecerão aqui.</p>
+                            </div>
+                            <form id="new-message-form" class="p-4 border-t border-gray-200 flex space-x-2 hidden">
+                                <input type="text" id="message-input" class="flex-1 block w-full rounded-md border-gray-300 shadow-sm" placeholder="Digite sua mensagem..." required>
+                                <button type="submit" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition duration-200">
+                                    Enviar
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- 3. App JavaScript (sem Firebase) -->
+    <script type="module">
+        // --- CONSTANTES DA API (Exemplos) ---
+        // Este é o prefixo da sua API Java.
+        // Ex: "http://localhost:8080/api" ou "/api"
+        const API_BASE_URL = "/api"; 
+
+        // --- DADOS MOCKADOS (Substitua pela sua API) ---
+        // Usamos isso porque a API Java ainda não existe.
+        
+        const MOCK_USER_ID = "user-simulado-1a2b3c";
+        
+        let MOCK_PROFILE = {
+            name: "Indústria de Teste Ltda.",
+            sector: "Metalurgia",
+            offers: "Capacidade ociosa em corte a laser.",
+            needs: "Parceiros para logística."
+        };
+
+        let MOCK_PROJECTS = [
+            {
+                id: "p1",
+                title: "Oportunidade: Parceria para Exportação",
+                description: "Buscamos PMEs do setor de alimentos para consórcio de exportação para o Mercosul.",
+                authorName: "Comex S.A.",
+                authorId: "user-xyz",
+                createdAt: "2025-11-08T10:00:00Z"
+            },
+            {
+                id: "p2",
+                title: "Preciso: Fornecedor de Embalagens Sustentáveis",
+                description: "Procuramos fornecedores de embalagens biodegradáveis em pequena escala.",
+                authorName: "EcoFoods Ltda.",
+                authorId: "user-abc",
+                createdAt: "2025-11-07T14:30:00Z"
+            }
+        ];
+        
+        let MOCK_MESSAGES = {
+            "logistica": [
+                { id: "m1", text: "Alguém tem indicação de transportadora para carga fracionada?", authorName: "Ana (Log)", authorId: "user-ana", createdAt: "2025-11-08T11:00:00Z" },
+                { id: "m2", text: "Estamos com um bom parceiro na região sul, qual é a sua necessidade?", authorName: "Marcos (Transp)", authorId: "user-marcos", createdAt: "2025-11-08T11:05:00Z" }
+            ],
+            "inovacao": [],
+            "sustentabilidade": [],
+            "gestao": []
+        };
+
+        // --- ESTADO DA APLICAÇÃO ---
+        let userId = null;
+        let userProfile = {};
+        let currentPage = 'profile';
+        let currentGroup = null;
+        let allProjects = []; // Cache local de projetos
+
+        // --- INICIALIZAÇÃO DA APLICAÇÃO ---
+        
+        // Esta função 'main' é chamada quando a página carrega
+        functioninitializeApp() {
+            // 1. Simular autenticação
+            // Na sua app real, você teria uma tela de login que
+            // chamaria sua API Java e retornaria um token e um userId.
+            userId = MOCK_USER_ID;
+            document.getElementById('user-id').textContent = userId;
+            document.getElementById('loading-auth').style.display = 'none';
+
+            // 2. Configurar a navegação
+            setupNavigation();
+            
+            // 3. Carregar dados iniciais e ir para a página padrão
+            loadProfile();
+            loadProjects();
+            navigateTo(currentPage);
+            
+            // 4. Configurar listeners de UI
+            setupEventListeners();
+        }
+
+        // --- NAVEGAÇÃO ---
+        function setupNavigation() {
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.addEventListener('click', (e) => {
+                    const page = e.target.dataset.page;
+                    navigateTo(page);
+                });
+            });
+        }
+
+        function navigateTo(pageId) {
+            currentPage = pageId;
+            document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+            const activePage = document.getElementById(`page-${pageId}`);
+            if (activePage) activePage.classList.add('active');
+            
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.toggle('text-blue-600', link.dataset.page === pageId);
+                link.classList.toggle('text-gray-600', link.dataset.page !== pageId);
+            });
+        }
+        
+        // --- CONFIGURAR EVENT LISTENERS (Formulários, etc.) ---
+        function setupEventListeners() {
+            // Salvar Perfil
+            document.getElementById('profile-form').addEventListener('submit', saveProfile);
+            // Novo Projeto
+            document.getElementById('new-project-form').addEventListener('submit', addNewProject);
+            // Busca de Projeto
+            document.getElementById('project-search').addEventListener('input', filterProjects);
+            // Seleção de Grupo
+            document.querySelectorAll('.group-select-btn').forEach(btn => {
+                btn.addEventListener('click', () => selectGroup(btn.dataset.group, btn.textContent));
+            });
+            // Enviar Mensagem
+            document.getElementById('new-message-form').addEventListener('submit', sendNewMessage);
+        }
+
+        // --- PÁGINA 1: PERFIL ---
+        
+        async function loadProfile() {
+            console.log("Carregando perfil...");
+            
+            // --- CÓDIGO DA API (Descomente para usar) ---
+            /*
+            try {
+                const response = await fetch(`${API_BASE_URL}/profile/${userId}`); // Ex: GET /api/profile/user-simulado-1a2b3c
+                if (!response.ok) {
+                    throw new Error('Perfil não encontrado');
+                }
+                userProfile = await response.json();
+            } catch (error) {
+                console.warn("Erro ao carregar perfil da API, usando dados mockados.", error);
+                userProfile = { ...MOCK_PROFILE }; // Usa o mock em caso de erro
+            }
+            */
+
+            // --- Código Mockado (Remova ao usar API) ---
+            userProfile = { ...MOCK_PROFILE };
+            // --- Fim do Código Mockado ---
+            
+            // Preenche o formulário
+            document.getElementById('profile-name').value = userProfile.name || '';
+            document.getElementById('profile-sector').value = userProfile.sector || '';
+            document.getElementById('profile-offers').value = userProfile.offers || '';
+            document.getElementById('profile-needs').value = userProfile.needs || '';
+        }
+
+        async function saveProfile(e) {
+            e.preventDefault();
+            console.log("Salvando perfil...");
+
+            const profileData = {
+                name: document.getElementById('profile-name').value,
+                sector: document.getElementById('profile-sector').value,
+                offers: document.getElementById('profile-offers').value,
+                needs: document.getElementById('profile-needs').value,
+            };
+
+            // --- CÓDIGO DA API (Descomente para usar) ---
+            /*
+            try {
+                const response = await fetch(`${API_BASE_URL}/profile/${userId}`, { // Ex: PUT /api/profile/user-simulado-1a2b3c
+                    method: 'PUT', // ou 'POST' se for criação
+                    headers: {
+                        'Content-Type': 'application/json',
+                        // 'Authorization': 'Bearer SEU_TOKEN_JWT' // Se você usar autenticação
+                    },
+                    body: JSON.stringify(profileData)
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Erro ao salvar perfil');
+                }
+                userProfile = await response.json(); // API retorna o perfil salvo
+                
+            } catch (error) {
+                console.error("Erro ao salvar perfil na API:", error);
+                document.getElementById('profile-status').textContent = 'Erro ao salvar.';
+                return; // Para não executar o código mockado
+            }
+            */
+
+            // --- Código Mockado (Remova ao usar API) ---
+            userProfile = { ...profileData };
+            MOCK_PROFILE = { ...profileData }; // Salva no mock local
+            // --- Fim do Código Mockado ---
+
+            // Exibe sucesso
+            const statusEl = document.getElementById('profile-status');
+            statusEl.textContent = 'Perfil salvo com sucesso!';
+            setTimeout(() => statusEl.textContent = '', 3000);
+        }
+
+        // --- PÁGINA 2: PROJETOS ---
+        
+        async function loadProjects() {
+            console.log("Carregando projetos...");
+            
+            // --- CÓDIGO DA API (Descomente para usar) ---
+            /*
+            try {
+                const response = await fetch(`${API_BASE_URL}/projects`); // Ex: GET /api/projects
+                if (!response.ok) throw new Error('Erro ao carregar projetos');
+                allProjects = await response.json();
+            } catch (error) {
+                console.warn("Erro ao carregar projetos da API, usando dados mockados.", error);
+                allProjects = [...MOCK_PROJECTS]; // Usa o mock em caso de erro
+            }
+            */
+
+            // --- Código Mockado (Remova ao usar API) ---
+            allProjects = [...MOCK_PROJECTS];
+            // --- Fim do Código Mockado ---
+
+            renderProjects(allProjects.reverse()); // Mostra os mais novos primeiro
+        }
+
+        function renderProjects(projects) {
+            const listEl = document.getElementById('projects-list');
+            const loadingEl = document.getElementById('projects-loading');
+            listEl.innerHTML = ''; // Limpa a lista
+            
+            if (projects.length === 0) {
+                loadingEl.textContent = "Nenhum projeto publicado ainda. Seja o primeiro!";
+                loadingEl.style.display = 'block';
+                return;
+            }
+
+            loadingEl.style.display = 'none';
+
+            projects.forEach(project => {
+                const card = document.createElement('div');
+                card.className = 'bg-white p-6 rounded-lg shadow-md border border-gray-200';
+                card.innerHTML = `
+                    <h3 class="text-xl font-semibold text-blue-700 mb-2">${project.title}</h3>
+                    <p class="text-gray-700 mb-4">${project.description}</p>
+                    <div class="border-t border-gray-200 pt-3">
+                        <p class="text-sm text-gray-500">Publicado por:</p>
+                        <p class="text-sm font-medium text-gray-800">${project.authorName}</p>
+                        <p class="text-xs text-gray-400 mt-1">${formatDate(project.createdAt)}</p>
+                    </div>
+                `;
+                listEl.appendChild(card);
+            });
+        }
+
+        async function addNewProject(e) {
+            e.preventDefault();
+            console.log("Adicionando novo projeto...");
+
+            const newProject = {
+                title: document.getElementById('project-title').value,
+                description: document.getElementById('project-desc').value,
+                authorName: userProfile.name || 'Anônimo', // Usa o nome do perfil
+                authorId: userId,
+                createdAt: new Date().toISOString() // Simula a data de criação
+            };
+
+            // --- CÓDIGO DA API (Descomente para usar) ---
+            /*
+            try {
+                const response = await fetch(`${API_BASE_URL}/projects`, { // Ex: POST /api/projects
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(newProject)
+                });
+                
+                if (!response.ok) throw new Error('Erro ao criar projeto');
+                
+                const createdProject = await response.json(); // API retorna o projeto criado
+                
+                // Adiciona na lista local (ou recarrega a lista)
+                allProjects.push(createdProject); 
+                renderProjects(allProjects.slice().reverse()); // .slice() para copiar
+
+            } catch (error) {
+                console.error("Erro ao adicionar projeto na API:", error);
+                // Mostrar erro na UI
+                return;
+            }
+            */
+            
+            // --- Código Mockado (Remova ao usar API) ---
+            newProject.id = `p${Math.floor(Math.random() * 1000)}`; // Simula um ID
+            MOCK_PROJECTS.push(newProject); // Adiciona no mock
+            allProjects.push(newProject); // Adiciona no cache local
+            renderProjects(allProjects.slice().reverse()); // Atualiza a UI
+            // --- Fim do Código Mockado ---
+
+            document.getElementById('new-project-form').reset();
+        }
+
+        function filterProjects(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            if (!searchTerm) {
+                renderProjects(allProjects.slice().reverse());
+                return;
+            }
+            const filteredProjects = allProjects.filter(p => 
+                p.title.toLowerCase().includes(searchTerm) ||
+                p.description.toLowerCase().includes(searchTerm)
+            );
+            renderProjects(filteredProjects.slice().reverse());
+        }
+
+        // --- PÁGINA 3: GRUPOS TEMÁTICOS ---
+        
+        // Esta é a principal diferença: Sem "tempo real" (onSnapshot).
+        // Você pode implementar "polling" (chamar a API a cada X segundos)
+        // ou usar WebSockets na sua API Java para tempo real.
+        // Por enquanto, apenas carregamos as mensagens 1 vez.
+
+        function selectGroup(groupName, groupTitle) {
+            currentGroup = groupName;
+            document.getElementById('current-group-title').textContent = `Grupo: ${groupTitle}`;
+            
+            document.querySelectorAll('.group-select-btn').forEach(b => b.classList.remove('bg-blue-100', 'text-blue-700'));
+            document.querySelector(`[data-group="${groupName}"]`).classList.add('bg-blue-100', 'text-blue-700');
+
+            document.getElementById('new-message-form').classList.remove('hidden');
+            
+            loadGroupMessages(currentGroup);
+        }
+
+        async function loadGroupMessages(groupName) {
+            console.log(`Carregando mensagens para ${groupName}...`);
+            let messages = [];
+
+            // --- CÓDIGO DA API (Descomente para usar) ---
+            /*
+            try {
+                const response = await fetch(`${API_BASE_URL}/groups/${groupName}/messages`); // Ex: GET /api/groups/logistica/messages
+                if (!response.ok) throw new Error('Erro ao carregar mensagens');
+                messages = await response.json();
+            } catch (error) {
+                console.warn("Erro ao carregar mensagens da API, usando dados mockados.", error);
+                messages = MOCK_MESSAGES[groupName] || []; // Usa o mock em caso de erro
+            }
+            */
+
+            // --- Código Mockado (Remova ao usar API) ---
+            messages = MOCK_MESSAGES[groupName] || [];
+            // --- Fim do Código Mockado ---
+            
+            renderMessages(messages);
+        }
+
+        function renderMessages(messages) {
+            const messagesEl = document.getElementById('group-messages');
+            const placeholderEl = document.getElementById('group-messages-placeholder');
+            messagesEl.innerHTML = ''; // Limpa mensagens
+
+            if (messages.length === 0) {
+                placeholderEl.style.display = 'block';
+                return;
+            }
+
+            placeholderEl.style.display = 'none';
+
+            messages.forEach(msg => {
+                const isMe = msg.authorId === userId;
+                const msgDiv = document.createElement('div');
+                msgDiv.className = `flex ${isMe ? 'justify-end' : 'justify-start'}`;
+                
+                msgDiv.innerHTML = `
+                    <div class="max-w-[70%] p-3 rounded-lg ${isMe ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-800'}">
+                        <p class="text-xs font-semibold mb-1 ${isMe ? 'text-blue-200' : 'text-gray-600'}">
+                            ${msg.authorName}
+                        </p>
+                        <p class="text-sm">${msg.text}</p>
+                        <p class="text-xs text-right mt-1 ${isMe ? 'text-blue-200' : 'text-gray-500'}">
+                            ${formatDate(msg.createdAt)}
+                        </p>
+                    </div>
+                `;
+                messagesEl.appendChild(msgDiv);
+            });
+            messagesEl.scrollTop = messagesEl.scrollHeight;
+        }
+
+        async function sendNewMessage(e) {
+            e.preventDefault();
+            if (!currentGroup) return;
+
+            const input = document.getElementById('message-input');
+            const text = input.value.trim();
+            if (!text) return;
+
+            const newMessage = {
+                text: text,
+                authorId: userId,
+                authorName: userProfile.name || 'Anônimo',
+                createdAt: new Date().toISOString()
+            };
+
+            // --- CÓDIGO DA API (Descomente para usar) ---
+            /*
+            try {
+                const response = await fetch(`${API_BASE_URL}/groups/${currentGroup}/messages`, { // Ex: POST /api/groups/logistica/messages
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(newMessage)
+                });
+                if (!response.ok) throw new Error('Erro ao enviar mensagem');
+                
+                const postedMessage = await response.json(); // API retorna a mensagem criada
+                
+                // Recarregar mensagens (ou adicionar localmente)
+                loadGroupMessages(currentGroup); // Simples, mas recarrega tudo
+                
+            } catch (error) {
+                console.error("Erro ao enviar mensagem pela API:", error);
+                return;
+            }
+            */
+
+            // --- Código Mockado (Remova ao usar API) ---
+            newMessage.id = `m${Math.floor(Math.random() * 1000)}`;
+            MOCK_MESSAGES[currentGroup].push(newMessage);
+            renderMessages(MOCK_MESSAGES[currentGroup]);
+            // --- Fim do Código Mockado ---
+
+            input.value = ''; // Limpa o input
+        }
+
+
+        // --- UTILITÁRIOS ---
+        function formatDate(dateString) {
+            if (!dateString) return '';
+            const date = new Date(dateString);
+            return date.toLocaleString('pt-BR', { 
+                day: '2-digit',
+                month: '2-digit',
+                hour: '2-digit', 
+                minute: '2-digit'
+            });
+        }
+
+        // --- INICIAR A APLICAÇÃO ---
+        initializeApp();
+
+    </script>
+</body>
+</html>

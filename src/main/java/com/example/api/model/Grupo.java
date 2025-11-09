@@ -1,5 +1,6 @@
 package com.example.api.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.Getter;
@@ -11,6 +12,7 @@ import java.util.List;
 @Setter
 @Data
 @Entity
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Grupo {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -20,6 +22,6 @@ public class Grupo {
     private String descricao;
 
     // Um grupo contém várias mensagens
-    @OneToMany(mappedBy = "grupo", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "grupo", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Mensagem> mensagens;
 }

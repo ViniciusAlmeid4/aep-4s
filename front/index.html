@@ -1,20 +1,57 @@
 <!DOCTYPE html>
+<!--
+    IndústriaConecta - MVP
+    Integração Frontend (HTML/Tailwind) com Backend (Spring Boot)
+    
+    Para usar uma base de API diferente:
+    - Abra com: index.html?apiBase=http://localhost:8080
+    - Ou defina: <meta name="api-base" content="http://localhost:8080">
+-->
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="api-base" content="http://localhost:8080">
     <title>IndústriaConecta - MVP (API)</title>
-    <!-- 1. Tailwind CSS -->
+    <!-- Google Fonts - Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* Fonte Inter padrão do Tailwind */
         body { font-family: 'Inter', sans-serif; }
-        /* Esconder páginas inativas */
         .page { display: none; }
         .page.active { display: block; }
+        /* Toast de erro */
+        #toast {
+            position: fixed;
+            bottom: 1rem;
+            right: 1rem;
+            background: #ef4444;
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            z-index: 50;
+            display: none;
+        }
+        #toast.show { display: block; animation: slideIn 0.3s ease-out; }
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        /* Menu mobile */
+        @media (max-width: 768px) {
+            .nav-menu { display: none; }
+            .nav-menu.open { display: flex; flex-direction: column; }
+        }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800">
+
+    <!-- Toast de Erro -->
+    <div id="toast" role="alert" aria-live="assertive"></div>
 
     <!-- Container Principal da App -->
     <div id="app" class="max-w-7xl mx-auto min-h-screen">
@@ -25,21 +62,36 @@
                 <div class="text-2xl font-bold text-blue-700">
                     Indústria<span class="text-blue-500">Conecta</span>
                 </div>
-                <div>
+                <!-- Menu Desktop -->
+                <div class="hidden md:flex nav-menu">
                     <button data-page="profile" class="nav-link text-gray-600 hover:text-blue-600 font-medium px-3 py-2 rounded-md">Perfil</button>
                     <button data-page="projects" class="nav-link text-gray-600 hover:text-blue-600 font-medium px-3 py-2 rounded-md">Projetos</button>
                     <button data-page="groups" class="nav-link text-gray-600 hover:text-blue-600 font-medium px-3 py-2 rounded-md">Grupos</button>
                 </div>
+                <!-- Menu Mobile (Hamburger) -->
+                <button id="mobile-menu-btn" class="md:hidden text-gray-600 hover:text-blue-600" aria-label="Menu">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                    </svg>
+                </button>
             </nav>
+            <!-- Menu Mobile Dropdown -->
+            <div id="mobile-menu" class="hidden md:hidden border-t border-gray-200">
+                <div class="flex flex-col px-4 py-2 space-y-2">
+                    <button data-page="profile" class="nav-link text-left text-gray-600 hover:text-blue-600 font-medium px-3 py-2 rounded-md">Perfil</button>
+                    <button data-page="projects" class="nav-link text-left text-gray-600 hover:text-blue-600 font-medium px-3 py-2 rounded-md">Projetos</button>
+                    <button data-page="groups" class="nav-link text-left text-gray-600 hover:text-blue-600 font-medium px-3 py-2 rounded-md">Grupos</button>
+                </div>
+            </div>
         </header>
 
         <!-- Área de Conteúdo Dinâmico -->
         <main class="p-4 md:p-8">
 
-            <!-- Tela de "Loading" simulada -->
+            <!-- Tela de "Loading" -->
             <div id="loading-auth" class="text-center py-10">
                 <p class="text-lg font-medium">Carregando aplicação...</p>
-                <p class="mt-2 text-sm text-gray-600">Seu ID de usuário (simulado) aparecerá aqui:</p>
+                <p class="mt-2 text-sm text-gray-600">Conectando com a API...</p>
                 <code id="user-id" class="text-xs bg-gray-200 p-2 rounded block mt-2 break-all">Aguardando...</code>
             </div>
 
@@ -49,14 +101,13 @@
                 <div class="bg-white p-6 rounded-lg shadow-md border border-gray-200">
                     <form id="profile-form">
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <!-- ... (campos do formulário - sem alteração) ... -->
                             <div>
                                 <label for="profile-name" class="block text-sm font-medium text-gray-700">Nome da Indústria / Empresa</label>
-                                <input type="text" id="profile-name" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" placeholder="Ex: Metalúrgica Silva Ltda." required>
+                                <input type="text" id="profile-name" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" placeholder="Ex: Metalúrgica Silva Ltda." required aria-required="true">
                             </div>
                             <div>
                                 <label for="profile-sector" class="block text-sm font-medium text-gray-700">Setor de Atuação</label>
-                                <input type="text" id="profile-sector" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" placeholder="Ex: Automotivo, Têxtil, Alimentos" required>
+                                <input type="text" id="profile-sector" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" placeholder="Ex: Automotivo, Têxtil, Alimentos" required aria-required="true">
                             </div>
                         </div>
                         <div class="mt-6">
@@ -72,7 +123,7 @@
                             <button type="submit" class="bg-blue-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-blue-700 transition duration-200">
                                 Salvar Perfil
                             </button>
-                            <span id="profile-status" class="ml-4 text-green-600"></span>
+                            <span id="profile-status" class="ml-4 text-green-600" aria-live="polite"></span>
                         </div>
                     </form>
                 </div>
@@ -85,15 +136,14 @@
                 <!-- Formulário para Novo Projeto -->
                 <div class="bg-white p-6 rounded-lg shadow-md border border-gray-200 mb-8">
                     <form id="new-project-form">
-                        <!-- ... (campos do formulário - sem alteração) ... -->
                         <h2 class="text-xl font-semibold mb-4">Publicar Nova Oportunidade</h2>
                         <div class="mb-4">
                             <label for="project-title" class="block text-sm font-medium text-gray-700">Título do Projeto / Oportunidade</label>
-                            <input type="text" id="project-title" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" placeholder="Ex: Busco parceiro para desenvolver novo produto" required>
+                            <input type="text" id="project-title" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" placeholder="Ex: Busco parceiro para desenvolver novo produto" required aria-required="true">
                         </div>
                         <div class="mb-4">
                             <label for="project-desc" class="block text-sm font-medium text-gray-700">Descrição</label>
-                            <textarea id="project-desc" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" placeholder="Detalhe o que você precisa ou oferece..." required></textarea>
+                            <textarea id="project-desc" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" placeholder="Detalhe o que você precisa ou oferece..." required aria-required="true"></textarea>
                         </div>
                         <div class="text-right">
                             <button type="submit" class="bg-blue-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-blue-700 transition duration-200">
@@ -105,39 +155,37 @@
 
                 <!-- Busca -->
                 <div class="mb-4">
-                    <input type="text" id="project-search" class="block w-full rounded-md border-gray-300 shadow-sm p-3" placeholder="Buscar projetos por palavra-chave...">
+                    <label for="project-search" class="sr-only">Buscar projetos</label>
+                    <input type="text" id="project-search" class="block w-full rounded-md border-gray-300 shadow-sm p-3" placeholder="Buscar projetos por palavra-chave..." aria-label="Buscar projetos">
                 </div>
 
                 <!-- Lista de Projetos -->
-                <div id="projects-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div id="projects-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                     <p id="projects-loading" class="text-gray-600">Carregando projetos...</p>
                 </div>
             </div>
 
             <!-- PÁGINA 3: GRUPOS (Grupos Temáticos) -->
             <div id="page-groups" class="page">
-                <!-- ... (HTML dos grupos - sem alteração) ... -->
                 <h1 class="text-3xl font-bold mb-6">Grupos Temáticos</h1>
                 <div class="md:flex md:space-x-6">
                     <div class="md:w-1/3 mb-6 md:mb-0">
                         <h2 class="text-xl font-semibold mb-4">Tópicos</h2>
                         <div class="bg-white p-4 rounded-lg shadow-md border border-gray-200">
-                            <ul id="group-list" class="space-y-2">
-                                <li><button class="group-select-btn w-full text-left p-3 rounded-md hover:bg-gray-100 font-medium" data-group="logistica">Logística e Cadeia de Suprimentos</button></li>
-                                <li><button class="group-select-btn w-full text-left p-3 rounded-md hover:bg-gray-100 font-medium" data-group="inovacao">Inovação e Tecnologia</button></li>
-                                <li><button class="group-select-btn w-full text-left p-3 rounded-md hover:bg-gray-100 font-medium" data-group="sustentabilidade">Sustentabilidade e ESG</button></li>
-                                <li><button class="group-select-btn w-full text-left p-3 rounded-md hover:bg-gray-100 font-medium" data-group="gestao">Gestão e Finanças</button></li>
+                            <ul id="group-list" class="space-y-2" role="list">
+                                <li role="listitem"><button class="group-select-btn w-full text-left p-3 rounded-md hover:bg-gray-100 font-medium" data-group-id="" data-group-name="">Carregando grupos...</button></li>
                             </ul>
                         </div>
                     </div>
                     <div class="md:w-2/3">
                         <h2 id="current-group-title" class="text-xl font-semibold mb-4">Selecione um grupo para começar</h2>
                         <div class="bg-white h-[60vh] flex flex-col rounded-lg shadow-md border border-gray-200">
-                            <div id="group-messages" class="flex-1 p-4 space-y-4 overflow-y-auto">
+                            <div id="group-messages" class="flex-1 p-4 space-y-4 overflow-y-auto" role="log" aria-live="polite">
                                 <p id="group-messages-placeholder" class="text-gray-500 text-center p-8">As mensagens deste grupo aparecerão aqui.</p>
                             </div>
                             <form id="new-message-form" class="p-4 border-t border-gray-200 flex space-x-2 hidden">
-                                <input type="text" id="message-input" class="flex-1 block w-full rounded-md border-gray-300 shadow-sm" placeholder="Digite sua mensagem..." required>
+                                <label for="message-input" class="sr-only">Digite sua mensagem</label>
+                                <input type="text" id="message-input" class="flex-1 block w-full rounded-md border-gray-300 shadow-sm" placeholder="Digite sua mensagem..." required aria-required="true">
                                 <button type="submit" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition duration-200">
                                     Enviar
                                 </button>
@@ -150,91 +198,211 @@
         </main>
     </div>
 
-    <!-- 3. App JavaScript (sem Firebase) -->
+    <!-- App JavaScript -->
     <script type="module">
-        // --- CONSTANTES DA API (Exemplos) ---
-        // Este é o prefixo da sua API Java.
-        // Ex: "http://localhost:8080/api" ou "/api"
-        const API_BASE_URL = "/api"; 
+        // ============================================
+        // CONFIGURAÇÃO DA API BASE URL
+        // ============================================
+        function getApiBaseUrl() {
+            // 1. Verifica querystring ?apiBase=...
+            const params = new URLSearchParams(window.location.search);
+            const queryApiBase = params.get('apiBase');
+            if (queryApiBase) return queryApiBase;
 
-        // --- DADOS MOCKADOS (Substitua pela sua API) ---
-        // Usamos isso porque a API Java ainda não existe.
-        
-        const MOCK_USER_ID = "user-simulado-1a2b3c";
-        
-        let MOCK_PROFILE = {
-            name: "Indústria de Teste Ltda.",
-            sector: "Metalurgia",
-            offers: "Capacidade ociosa em corte a laser.",
-            needs: "Parceiros para logística."
-        };
+            // 2. Verifica meta tag
+            const metaApiBase = document.querySelector('meta[name="api-base"]');
+            if (metaApiBase && metaApiBase.content) return metaApiBase.content;
 
-        let MOCK_PROJECTS = [
-            {
-                id: "p1",
-                title: "Oportunidade: Parceria para Exportação",
-                description: "Buscamos PMEs do setor de alimentos para consórcio de exportação para o Mercosul.",
-                authorName: "Comex S.A.",
-                authorId: "user-xyz",
-                createdAt: "2025-11-08T10:00:00Z"
-            },
-            {
-                id: "p2",
-                title: "Preciso: Fornecedor de Embalagens Sustentáveis",
-                description: "Procuramos fornecedores de embalagens biodegradáveis em pequena escala.",
-                authorName: "EcoFoods Ltda.",
-                authorId: "user-abc",
-                createdAt: "2025-11-07T14:30:00Z"
-            }
-        ];
-        
-        let MOCK_MESSAGES = {
-            "logistica": [
-                { id: "m1", text: "Alguém tem indicação de transportadora para carga fracionada?", authorName: "Ana (Log)", authorId: "user-ana", createdAt: "2025-11-08T11:00:00Z" },
-                { id: "m2", text: "Estamos com um bom parceiro na região sul, qual é a sua necessidade?", authorName: "Marcos (Transp)", authorId: "user-marcos", createdAt: "2025-11-08T11:05:00Z" }
-            ],
-            "inovacao": [],
-            "sustentabilidade": [],
-            "gestao": []
-        };
-
-        // --- ESTADO DA APLICAÇÃO ---
-        let userId = null;
-        let userProfile = {};
-        let currentPage = 'profile';
-        let currentGroup = null;
-        let allProjects = []; // Cache local de projetos
-
-        // --- INICIALIZAÇÃO DA APLICAÇÃO ---
-        
-        // Esta função 'main' é chamada quando a página carrega
-        functioninitializeApp() {
-            // 1. Simular autenticação
-            // Na sua app real, você teria uma tela de login que
-            // chamaria sua API Java e retornaria um token e um userId.
-            userId = MOCK_USER_ID;
-            document.getElementById('user-id').textContent = userId;
-            document.getElementById('loading-auth').style.display = 'none';
-
-            // 2. Configurar a navegação
-            setupNavigation();
-            
-            // 3. Carregar dados iniciais e ir para a página padrão
-            loadProfile();
-            loadProjects();
-            navigateTo(currentPage);
-            
-            // 4. Configurar listeners de UI
-            setupEventListeners();
+            // 3. Fallback padrão
+            return 'http://localhost:8080';
         }
 
-        // --- NAVEGAÇÃO ---
+        const API_BASE_URL = getApiBaseUrl();
+        console.log('API_BASE_URL:', API_BASE_URL);
+
+        // ============================================
+        // HELPER DE REQUISIÇÃO HTTP
+        // ============================================
+        async function apiRequest(path, options = {}) {
+            const { method = 'GET', body, headers = {} } = options;
+            
+            const config = {
+                method,
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                    ...headers
+                }
+            };
+
+            if (body && method !== 'GET') {
+                config.body = JSON.stringify(body);
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}${path}`, config);
+                
+                // Sempre pega o texto primeiro
+                const text = await response.text();
+                const ct = response.headers.get('content-type') || '';
+
+                // 204/DELETE → sem corpo
+                if (response.status === 204 || (method === 'DELETE')) {
+                    return null;
+                }
+
+                // Tenta parsear JSON apenas se content-type indicar json e houver corpo
+                let data = null;
+                if (text && ct.includes('application/json')) {
+                    try {
+                        data = JSON.parse(text);
+                    } catch (e) {
+                        throw new Error(`Falha ao parsear JSON (${response.status}): ${text.slice(0, 300)}`);
+                    }
+                } else if (!response.ok) {
+                    // Erro com corpo não-JSON → incluir trecho para debug
+                    throw new Error(`Erro HTTP ${response.status}: ${text.slice(0, 300)}`);
+                }
+
+                if (!response.ok) {
+                    throw new Error(`Erro HTTP ${response.status}: ${data ? JSON.stringify(data).slice(0, 300) : text.slice(0, 300)}`);
+                }
+
+                return data;
+            } catch (error) {
+                console.error('Erro na requisição:', error);
+                showToast(`Erro ao comunicar com a API: ${error.message}`);
+                throw error;
+            }
+        }
+
+        // ============================================
+        // TOAST DE ERRO
+        // ============================================
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 5000);
+        }
+
+        // ============================================
+        // SERVICES (Funções puras para chamadas de API)
+        // ============================================
+        const api = {
+            // Grupos
+            async getGroups() {
+                return apiRequest('/grupos');
+            },
+
+            // Mensagens
+            async getGroupMessages(groupId) {
+                return apiRequest(`/mensagens/grupo/${groupId}`);
+            },
+
+            async postMessage(groupId, profileId, conteudo) {
+                return apiRequest(`/mensagens/grupo/${groupId}/perfil/${profileId}`, {
+                    method: 'POST',
+                    body: { conteudo }
+                });
+            },
+
+            // Perfis
+            async getProfiles() {
+                return apiRequest('/perfis');
+            },
+
+            async getProfile(id) {
+                return apiRequest(`/perfis/${id}`);
+            },
+
+            async createProfile(data) {
+                return apiRequest('/perfis', {
+                    method: 'POST',
+                    body: data
+                });
+            },
+
+            async updateProfile(id, data) {
+                return apiRequest(`/perfis/${id}`, {
+                    method: 'PUT',
+                    body: data
+                });
+            },
+
+            // Projetos
+            async getProjects() {
+                return apiRequest('/projetos');
+            },
+
+            async createProject(profileId, data) {
+                return apiRequest(`/projetos/perfil/${profileId}`, {
+                    method: 'POST',
+                    body: data
+                });
+            }
+        };
+
+        // ============================================
+        // ESTADO DA APLICAÇÃO
+        // ============================================
+        let currentProfileId = null;
+        let currentGroupId = null;
+        let currentPage = 'profile';
+        let allProjects = [];
+        let allGroups = [];
+        let searchTimeout = null;
+
+        // ============================================
+        // INICIALIZAÇÃO
+        // ============================================
+        async function initializeApp() {
+            try {
+                // Testa conexão com a API
+                const groups = await api.getGroups();
+                console.log('GET /grupos:', groups);
+                allGroups = groups;
+
+                // Carrega dados iniciais
+                await loadGroups();
+                await initializeProfile();
+                await loadProjects();
+
+                // Esconde loading e mostra primeira página
+                document.getElementById('loading-auth').style.display = 'none';
+                navigateTo(currentPage);
+
+                // Configura listeners
+                setupEventListeners();
+            } catch (error) {
+                console.error('Erro na inicialização:', error);
+                document.getElementById('loading-auth').innerHTML = `
+                    <p class="text-lg font-medium text-red-600">Erro ao conectar com a API</p>
+                    <p class="mt-2 text-sm text-gray-600">Verifique se o backend está rodando em ${API_BASE_URL}</p>
+                `;
+            }
+        }
+
+        // ============================================
+        // NAVEGAÇÃO
+        // ============================================
         function setupNavigation() {
+            // Desktop e Mobile
             document.querySelectorAll('.nav-link').forEach(link => {
                 link.addEventListener('click', (e) => {
                     const page = e.target.dataset.page;
                     navigateTo(page);
+                    // Fecha menu mobile
+                    document.getElementById('mobile-menu').classList.add('hidden');
                 });
+            });
+
+            // Menu mobile hamburger
+            document.getElementById('mobile-menu-btn').addEventListener('click', () => {
+                const menu = document.getElementById('mobile-menu');
+                menu.classList.toggle('hidden');
             });
         }
 
@@ -245,135 +413,113 @@
             if (activePage) activePage.classList.add('active');
             
             document.querySelectorAll('.nav-link').forEach(link => {
-                link.classList.toggle('text-blue-600', link.dataset.page === pageId);
-                link.classList.toggle('text-gray-600', link.dataset.page !== pageId);
+                const isActive = link.dataset.page === pageId;
+                link.classList.toggle('text-blue-600', isActive);
+                link.classList.toggle('text-gray-600', !isActive);
             });
         }
-        
-        // --- CONFIGURAR EVENT LISTENERS (Formulários, etc.) ---
+
+        // ============================================
+        // EVENT LISTENERS
+        // ============================================
         function setupEventListeners() {
-            // Salvar Perfil
+            setupNavigation();
+
+            // Perfil
             document.getElementById('profile-form').addEventListener('submit', saveProfile);
-            // Novo Projeto
+
+            // Projetos
             document.getElementById('new-project-form').addEventListener('submit', addNewProject);
-            // Busca de Projeto
-            document.getElementById('project-search').addEventListener('input', filterProjects);
-            // Seleção de Grupo
-            document.querySelectorAll('.group-select-btn').forEach(btn => {
-                btn.addEventListener('click', () => selectGroup(btn.dataset.group, btn.textContent));
+            document.getElementById('project-search').addEventListener('input', (e) => {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => filterProjects(e), 250);
             });
-            // Enviar Mensagem
+
+            // Mensagens
             document.getElementById('new-message-form').addEventListener('submit', sendNewMessage);
         }
 
-        // --- PÁGINA 1: PERFIL ---
-        
-        async function loadProfile() {
-            console.log("Carregando perfil...");
-            
-            // --- CÓDIGO DA API (Descomente para usar) ---
-            /*
+        // ============================================
+        // PÁGINA: PERFIL
+        // ============================================
+        async function initializeProfile() {
             try {
-                const response = await fetch(`${API_BASE_URL}/profile/${userId}`); // Ex: GET /api/profile/user-simulado-1a2b3c
-                if (!response.ok) {
-                    throw new Error('Perfil não encontrado');
+                const profiles = await api.getProfiles();
+                if (profiles && profiles.length > 0) {
+                    const profile = profiles[0];
+                    currentProfileId = profile.id;
+                    console.log('Perfil carregado, currentProfileId:', currentProfileId);
+                    
+                    // Preenche formulário
+                    document.getElementById('profile-name').value = profile.nome || '';
+                    document.getElementById('profile-sector').value = profile.setor || '';
+                    document.getElementById('profile-offers').value = profile.oferece || '';
+                    document.getElementById('profile-needs').value = profile.busca || '';
+                } else {
+                    console.log('Nenhum perfil encontrado, será criado um novo ao salvar');
                 }
-                userProfile = await response.json();
             } catch (error) {
-                console.warn("Erro ao carregar perfil da API, usando dados mockados.", error);
-                userProfile = { ...MOCK_PROFILE }; // Usa o mock em caso de erro
+                console.warn('Erro ao carregar perfil:', error);
             }
-            */
-
-            // --- Código Mockado (Remova ao usar API) ---
-            userProfile = { ...MOCK_PROFILE };
-            // --- Fim do Código Mockado ---
-            
-            // Preenche o formulário
-            document.getElementById('profile-name').value = userProfile.name || '';
-            document.getElementById('profile-sector').value = userProfile.sector || '';
-            document.getElementById('profile-offers').value = userProfile.offers || '';
-            document.getElementById('profile-needs').value = userProfile.needs || '';
         }
 
         async function saveProfile(e) {
             e.preventDefault();
-            console.log("Salvando perfil...");
 
             const profileData = {
-                name: document.getElementById('profile-name').value,
-                sector: document.getElementById('profile-sector').value,
-                offers: document.getElementById('profile-offers').value,
-                needs: document.getElementById('profile-needs').value,
+                nome: document.getElementById('profile-name').value,
+                email: '', // Campo opcional, pode ser adicionado ao formulário depois
+                setor: document.getElementById('profile-sector').value,
+                oferece: document.getElementById('profile-offers').value,
+                busca: document.getElementById('profile-needs').value
             };
 
-            // --- CÓDIGO DA API (Descomente para usar) ---
-            /*
             try {
-                const response = await fetch(`${API_BASE_URL}/profile/${userId}`, { // Ex: PUT /api/profile/user-simulado-1a2b3c
-                    method: 'PUT', // ou 'POST' se for criação
-                    headers: {
-                        'Content-Type': 'application/json',
-                        // 'Authorization': 'Bearer SEU_TOKEN_JWT' // Se você usar autenticação
-                    },
-                    body: JSON.stringify(profileData)
-                });
-                
-                if (!response.ok) {
-                    throw new Error('Erro ao salvar perfil');
+                let savedProfile;
+                if (currentProfileId) {
+                    savedProfile = await api.updateProfile(currentProfileId, profileData);
+                    console.log('Perfil atualizado, currentProfileId:', currentProfileId);
+                } else {
+                    savedProfile = await api.createProfile(profileData);
+                    currentProfileId = savedProfile.id;
+                    console.log('Perfil criado, currentProfileId:', currentProfileId);
                 }
-                userProfile = await response.json(); // API retorna o perfil salvo
-                
+
+                const statusEl = document.getElementById('profile-status');
+                statusEl.textContent = 'Perfil salvo com sucesso!';
+                setTimeout(() => statusEl.textContent = '', 3000);
             } catch (error) {
-                console.error("Erro ao salvar perfil na API:", error);
-                document.getElementById('profile-status').textContent = 'Erro ao salvar.';
-                return; // Para não executar o código mockado
+                console.error('Erro ao salvar perfil:', error);
+                const statusEl = document.getElementById('profile-status');
+                statusEl.textContent = 'Erro ao salvar perfil.';
+                statusEl.className = 'ml-4 text-red-600';
             }
-            */
-
-            // --- Código Mockado (Remova ao usar API) ---
-            userProfile = { ...profileData };
-            MOCK_PROFILE = { ...profileData }; // Salva no mock local
-            // --- Fim do Código Mockado ---
-
-            // Exibe sucesso
-            const statusEl = document.getElementById('profile-status');
-            statusEl.textContent = 'Perfil salvo com sucesso!';
-            setTimeout(() => statusEl.textContent = '', 3000);
         }
 
-        // --- PÁGINA 2: PROJETOS ---
-        
+        // ============================================
+        // PÁGINA: PROJETOS
+        // ============================================
         async function loadProjects() {
-            console.log("Carregando projetos...");
-            
-            // --- CÓDIGO DA API (Descomente para usar) ---
-            /*
             try {
-                const response = await fetch(`${API_BASE_URL}/projects`); // Ex: GET /api/projects
-                if (!response.ok) throw new Error('Erro ao carregar projetos');
-                allProjects = await response.json();
+                const projects = await api.getProjects();
+                allProjects = projects || [];
+                renderProjects(allProjects.reverse());
             } catch (error) {
-                console.warn("Erro ao carregar projetos da API, usando dados mockados.", error);
-                allProjects = [...MOCK_PROJECTS]; // Usa o mock em caso de erro
+                console.error('Erro ao carregar projetos:', error);
+                allProjects = [];
+                renderProjects([]);
             }
-            */
-
-            // --- Código Mockado (Remova ao usar API) ---
-            allProjects = [...MOCK_PROJECTS];
-            // --- Fim do Código Mockado ---
-
-            renderProjects(allProjects.reverse()); // Mostra os mais novos primeiro
         }
 
         function renderProjects(projects) {
             const listEl = document.getElementById('projects-list');
             const loadingEl = document.getElementById('projects-loading');
-            listEl.innerHTML = ''; // Limpa a lista
-            
+            listEl.innerHTML = '';
+
             if (projects.length === 0) {
-                loadingEl.textContent = "Nenhum projeto publicado ainda. Seja o primeiro!";
+                loadingEl.textContent = 'Nenhum projeto publicado ainda. Seja o primeiro!';
                 loadingEl.style.display = 'block';
+                listEl.appendChild(loadingEl);
                 return;
             }
 
@@ -381,14 +527,15 @@
 
             projects.forEach(project => {
                 const card = document.createElement('div');
-                card.className = 'bg-white p-6 rounded-lg shadow-md border border-gray-200';
+                card.className = 'bg-white p-6 rounded-lg shadow-md border border-gray-200 hover:shadow-lg transition-shadow';
+                // Usando DTO: autorNome vem direto do ProjetoDTO
+                const autorNome = project.autorNome || 'Anônimo';
                 card.innerHTML = `
-                    <h3 class="text-xl font-semibold text-blue-700 mb-2">${project.title}</h3>
-                    <p class="text-gray-700 mb-4">${project.description}</p>
+                    <h3 class="text-xl font-semibold text-blue-700 mb-2">${escapeHtml(project.titulo || 'Sem título')}</h3>
+                    <p class="text-gray-700 mb-4">${escapeHtml(project.descricao || '')}</p>
                     <div class="border-t border-gray-200 pt-3">
                         <p class="text-sm text-gray-500">Publicado por:</p>
-                        <p class="text-sm font-medium text-gray-800">${project.authorName}</p>
-                        <p class="text-xs text-gray-400 mt-1">${formatDate(project.createdAt)}</p>
+                        <p class="text-sm font-medium text-gray-800">${escapeHtml(autorNome)}</p>
                     </div>
                 `;
                 listEl.appendChild(card);
@@ -397,48 +544,28 @@
 
         async function addNewProject(e) {
             e.preventDefault();
-            console.log("Adicionando novo projeto...");
 
-            const newProject = {
-                title: document.getElementById('project-title').value,
-                description: document.getElementById('project-desc').value,
-                authorName: userProfile.name || 'Anônimo', // Usa o nome do perfil
-                authorId: userId,
-                createdAt: new Date().toISOString() // Simula a data de criação
-            };
-
-            // --- CÓDIGO DA API (Descomente para usar) ---
-            /*
-            try {
-                const response = await fetch(`${API_BASE_URL}/projects`, { // Ex: POST /api/projects
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(newProject)
-                });
-                
-                if (!response.ok) throw new Error('Erro ao criar projeto');
-                
-                const createdProject = await response.json(); // API retorna o projeto criado
-                
-                // Adiciona na lista local (ou recarrega a lista)
-                allProjects.push(createdProject); 
-                renderProjects(allProjects.slice().reverse()); // .slice() para copiar
-
-            } catch (error) {
-                console.error("Erro ao adicionar projeto na API:", error);
-                // Mostrar erro na UI
+            if (!currentProfileId) {
+                showToast('Por favor, salve seu perfil primeiro.');
+                navigateTo('profile');
                 return;
             }
-            */
-            
-            // --- Código Mockado (Remova ao usar API) ---
-            newProject.id = `p${Math.floor(Math.random() * 1000)}`; // Simula um ID
-            MOCK_PROJECTS.push(newProject); // Adiciona no mock
-            allProjects.push(newProject); // Adiciona no cache local
-            renderProjects(allProjects.slice().reverse()); // Atualiza a UI
-            // --- Fim do Código Mockado ---
 
-            document.getElementById('new-project-form').reset();
+            const projectData = {
+                titulo: document.getElementById('project-title').value,
+                descricao: document.getElementById('project-desc').value,
+                tipo: null // Opcional
+            };
+
+            try {
+                const createdProject = await api.createProject(currentProfileId, projectData);
+                // ProjetoDTO retornado, adiciona ao topo
+                allProjects.push(createdProject);
+                renderProjects(allProjects.slice().reverse());
+                document.getElementById('new-project-form').reset();
+            } catch (error) {
+                console.error('Erro ao criar projeto:', error);
+            }
         }
 
         function filterProjects(e) {
@@ -447,80 +574,101 @@
                 renderProjects(allProjects.slice().reverse());
                 return;
             }
-            const filteredProjects = allProjects.filter(p => 
-                p.title.toLowerCase().includes(searchTerm) ||
-                p.description.toLowerCase().includes(searchTerm)
+            const filtered = allProjects.filter(p => 
+                (p.titulo || '').toLowerCase().includes(searchTerm) ||
+                (p.descricao || '').toLowerCase().includes(searchTerm)
             );
-            renderProjects(filteredProjects.slice().reverse());
+            renderProjects(filtered.slice().reverse());
         }
 
-        // --- PÁGINA 3: GRUPOS TEMÁTICOS ---
-        
-        // Esta é a principal diferença: Sem "tempo real" (onSnapshot).
-        // Você pode implementar "polling" (chamar a API a cada X segundos)
-        // ou usar WebSockets na sua API Java para tempo real.
-        // Por enquanto, apenas carregamos as mensagens 1 vez.
+        // ============================================
+        // PÁGINA: GRUPOS E MENSAGENS
+        // ============================================
+        async function loadGroups() {
+            try {
+                const groups = await api.getGroups();
+                allGroups = groups || [];
+                renderGroups();
+            } catch (error) {
+                console.error('Erro ao carregar grupos:', error);
+            }
+        }
 
-        function selectGroup(groupName, groupTitle) {
-            currentGroup = groupName;
-            document.getElementById('current-group-title').textContent = `Grupo: ${groupTitle}`;
+        function renderGroups() {
+            const listEl = document.getElementById('group-list');
+            listEl.innerHTML = '';
+
+            if (allGroups.length === 0) {
+                listEl.innerHTML = '<li class="text-gray-500">Nenhum grupo disponível</li>';
+                return;
+            }
+
+            allGroups.forEach(group => {
+                const li = document.createElement('li');
+                li.setAttribute('role', 'listitem');
+                const btn = document.createElement('button');
+                btn.className = 'group-select-btn w-full text-left p-3 rounded-md hover:bg-gray-100 font-medium';
+                btn.setAttribute('data-group-id', group.id);
+                btn.setAttribute('data-group-name', group.nome || '');
+                btn.textContent = group.nome || `Grupo ${group.id}`;
+                btn.addEventListener('click', () => selectGroup(group.id, group.nome || `Grupo ${group.id}`));
+                li.appendChild(btn);
+                listEl.appendChild(li);
+            });
+        }
+
+        async function selectGroup(groupId, groupName) {
+            currentGroupId = groupId;
+            document.getElementById('current-group-title').textContent = `Grupo: ${groupName}`;
             
-            document.querySelectorAll('.group-select-btn').forEach(b => b.classList.remove('bg-blue-100', 'text-blue-700'));
-            document.querySelector(`[data-group="${groupName}"]`).classList.add('bg-blue-100', 'text-blue-700');
+            document.querySelectorAll('.group-select-btn').forEach(b => {
+                b.classList.remove('bg-blue-100', 'text-blue-700');
+            });
+            document.querySelector(`[data-group-id="${groupId}"]`).classList.add('bg-blue-100', 'text-blue-700');
 
             document.getElementById('new-message-form').classList.remove('hidden');
             
-            loadGroupMessages(currentGroup);
+            await loadGroupMessages(groupId);
         }
 
-        async function loadGroupMessages(groupName) {
-            console.log(`Carregando mensagens para ${groupName}...`);
-            let messages = [];
-
-            // --- CÓDIGO DA API (Descomente para usar) ---
-            /*
+        async function loadGroupMessages(groupId) {
             try {
-                const response = await fetch(`${API_BASE_URL}/groups/${groupName}/messages`); // Ex: GET /api/groups/logistica/messages
-                if (!response.ok) throw new Error('Erro ao carregar mensagens');
-                messages = await response.json();
+                const messages = await api.getGroupMessages(groupId);
+                renderMessages(messages || []);
             } catch (error) {
-                console.warn("Erro ao carregar mensagens da API, usando dados mockados.", error);
-                messages = MOCK_MESSAGES[groupName] || []; // Usa o mock em caso de erro
+                console.error('Erro ao carregar mensagens:', error);
+                renderMessages([]);
             }
-            */
-
-            // --- Código Mockado (Remova ao usar API) ---
-            messages = MOCK_MESSAGES[groupName] || [];
-            // --- Fim do Código Mockado ---
-            
-            renderMessages(messages);
         }
 
         function renderMessages(messages) {
             const messagesEl = document.getElementById('group-messages');
             const placeholderEl = document.getElementById('group-messages-placeholder');
-            messagesEl.innerHTML = ''; // Limpa mensagens
+            messagesEl.innerHTML = '';
 
             if (messages.length === 0) {
                 placeholderEl.style.display = 'block';
+                messagesEl.appendChild(placeholderEl);
                 return;
             }
 
             placeholderEl.style.display = 'none';
 
             messages.forEach(msg => {
-                const isMe = msg.authorId === userId;
+                // Usando DTO: autorId e autorNome vêm direto do MensagemDTO
+                const isMe = msg.autorId === currentProfileId;
+                const autorNome = msg.autorNome || 'Anônimo';
                 const msgDiv = document.createElement('div');
                 msgDiv.className = `flex ${isMe ? 'justify-end' : 'justify-start'}`;
                 
                 msgDiv.innerHTML = `
                     <div class="max-w-[70%] p-3 rounded-lg ${isMe ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-800'}">
                         <p class="text-xs font-semibold mb-1 ${isMe ? 'text-blue-200' : 'text-gray-600'}">
-                            ${msg.authorName}
+                            ${escapeHtml(autorNome)}
                         </p>
-                        <p class="text-sm">${msg.text}</p>
+                        <p class="text-sm">${escapeHtml(msg.conteudo || '')}</p>
                         <p class="text-xs text-right mt-1 ${isMe ? 'text-blue-200' : 'text-gray-500'}">
-                            ${formatDate(msg.createdAt)}
+                            ${formatDate(msg.enviadaEm)}
                         </p>
                     </div>
                 `;
@@ -531,65 +679,77 @@
 
         async function sendNewMessage(e) {
             e.preventDefault();
-            if (!currentGroup) return;
-
-            const input = document.getElementById('message-input');
-            const text = input.value.trim();
-            if (!text) return;
-
-            const newMessage = {
-                text: text,
-                authorId: userId,
-                authorName: userProfile.name || 'Anônimo',
-                createdAt: new Date().toISOString()
-            };
-
-            // --- CÓDIGO DA API (Descomente para usar) ---
-            /*
-            try {
-                const response = await fetch(`${API_BASE_URL}/groups/${currentGroup}/messages`, { // Ex: POST /api/groups/logistica/messages
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(newMessage)
-                });
-                if (!response.ok) throw new Error('Erro ao enviar mensagem');
-                
-                const postedMessage = await response.json(); // API retorna a mensagem criada
-                
-                // Recarregar mensagens (ou adicionar localmente)
-                loadGroupMessages(currentGroup); // Simples, mas recarrega tudo
-                
-            } catch (error) {
-                console.error("Erro ao enviar mensagem pela API:", error);
+            if (!currentGroupId || !currentProfileId) {
+                showToast('Por favor, selecione um grupo e tenha um perfil salvo.');
                 return;
             }
-            */
 
-            // --- Código Mockado (Remova ao usar API) ---
-            newMessage.id = `m${Math.floor(Math.random() * 1000)}`;
-            MOCK_MESSAGES[currentGroup].push(newMessage);
-            renderMessages(MOCK_MESSAGES[currentGroup]);
-            // --- Fim do Código Mockado ---
+            const input = document.getElementById('message-input');
+            const conteudo = input.value.trim();
+            if (!conteudo) return;
 
-            input.value = ''; // Limpa o input
+            try {
+                // POST retorna MensagemDTO
+                const newMessage = await api.postMessage(currentGroupId, currentProfileId, conteudo);
+                console.log('Mensagem enviada, groupId:', currentGroupId, 'perfilId:', currentProfileId);
+                input.value = '';
+                
+                // Adiciona a mensagem retornada diretamente à lista sem recarregar tudo
+                const messagesEl = document.getElementById('group-messages');
+                const placeholderEl = document.getElementById('group-messages-placeholder');
+                placeholderEl.style.display = 'none';
+                
+                const isMe = newMessage.autorId === currentProfileId;
+                const autorNome = newMessage.autorNome || 'Anônimo';
+                const msgDiv = document.createElement('div');
+                msgDiv.className = `flex ${isMe ? 'justify-end' : 'justify-start'}`;
+                
+                msgDiv.innerHTML = `
+                    <div class="max-w-[70%] p-3 rounded-lg ${isMe ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-800'}">
+                        <p class="text-xs font-semibold mb-1 ${isMe ? 'text-blue-200' : 'text-gray-600'}">
+                            ${escapeHtml(autorNome)}
+                        </p>
+                        <p class="text-sm">${escapeHtml(newMessage.conteudo || '')}</p>
+                        <p class="text-xs text-right mt-1 ${isMe ? 'text-blue-200' : 'text-gray-500'}">
+                            ${formatDate(newMessage.enviadaEm)}
+                        </p>
+                    </div>
+                `;
+                messagesEl.appendChild(msgDiv);
+                messagesEl.scrollTop = messagesEl.scrollHeight;
+            } catch (error) {
+                console.error('Erro ao enviar mensagem:', error);
+            }
         }
 
-
-        // --- UTILITÁRIOS ---
+        // ============================================
+        // UTILITÁRIOS
+        // ============================================
         function formatDate(dateString) {
             if (!dateString) return '';
-            const date = new Date(dateString);
-            return date.toLocaleString('pt-BR', { 
-                day: '2-digit',
-                month: '2-digit',
-                hour: '2-digit', 
-                minute: '2-digit'
-            });
+            try {
+                const date = new Date(dateString);
+                return date.toLocaleString('pt-BR', { 
+                    day: '2-digit',
+                    month: '2-digit',
+                    hour: '2-digit', 
+                    minute: '2-digit'
+                });
+            } catch {
+                return dateString;
+            }
         }
 
-        // --- INICIAR A APLICAÇÃO ---
-        initializeApp();
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
 
+        // ============================================
+        // INICIAR APLICAÇÃO
+        // ============================================
+        initializeApp();
     </script>
 </body>
 </html>
